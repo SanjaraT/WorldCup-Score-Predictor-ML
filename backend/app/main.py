@@ -12,7 +12,7 @@
 # )
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# MODEL_PATH = os.path.join(BASE_DIR, "model", "t20_score_predictor_2.pkl")
+# MODEL_PATH = os.path.join(BASE_DIR, "model", "t20_score_predictor_3.pkl")
 
 # MODEL_URL = "https://huggingface.co/SanjuTuni/world_cup_score_predictor_model/resolve/main/t20_score_predictor_2.pkl"
 
@@ -132,8 +132,8 @@ app = FastAPI(
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
-MODEL_PATH = os.path.join(MODEL_DIR, "t20_score_predictor_2.pkl")
-MODEL_URL = "https://huggingface.co/SanjuTuni/world_cup_score_predictor_model/resolve/main/t20_score_predictor_2.pkl"
+MODEL_PATH = os.path.join(MODEL_DIR, "t20_score_predictor_3.pkl")
+MODEL_URL = "https://huggingface.co/SanjuTuni/Score_Predictor_Model/resolve/main/t20_score_predictor_3.pkl"
 
 
 model = None
@@ -141,22 +141,25 @@ model = None
 def download_model():
     if not os.path.exists(MODEL_PATH):
         print("Downloading model from Hugging Face...")
-        os.makedirs(MODEL_DIR, exist_ok=True)
-        response = requests.get(MODEL_URL)
-        with open(MODEL_PATH, "wb") as f:
-            f.write(response.content)
-        print("Model downloaded successfully!")
-        print("Model size:", os.path.getsize(MODEL_PATH))
 
-def get_model():
+        os.makedirs(MODEL_DIR, exist_ok=True)
+
+        with requests.get(MODEL_URL, stream=True) as r:
+            r.raise_for_status()
+            with open(MODEL_PATH, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+        print("Model downloaded successfully!")
+
+@app.on_event("startup")
+def load_model_on_startup():
     global model
-    if model is None:
-        download_model()
-        print("Loading model into memory...")
-        with open(MODEL_PATH, "rb") as f:
-            model = pickle.load(f)
-        print("Model loaded successfully!")
-    return model
+    download_model()
+    print("Loading model into memory...")
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    print("Model loaded successfully!")
 
 
 TOTAL_BALLS = 120
@@ -213,8 +216,8 @@ def predict_score(data: MatchInput):
         "last_5_overs_runs": last_5_overs_runs
     }])
 
-    model_instance = get_model()
-    prediction = model_instance.predict(df)[0]
+    
+    prediction = model.predict(df)[0]
 
     return PredictionResponse(
         predicted_score=round(float(prediction), 2),
