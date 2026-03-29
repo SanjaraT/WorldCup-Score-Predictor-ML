@@ -6,13 +6,13 @@ Live Demo
 
 🔗 Frontend (Streamlit App):
     https://worldcup-score-predictor-system.onrender.com
-    
+
 🔗 Backend API (FastAPI):
     https://cricket-score-predictor-system.onrender.com
 
 📸 Screenshots
 
-![UI](assets/score_pred_2.png)
+![UI](assets/score_pred_2.PNG)
 
 🧠 Project Overview
 
